@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  Query,
   ValidationPipe,
 } from '@nestjs/common';
 import { CertificateService } from './certificate.service';
@@ -15,23 +14,13 @@ import { UpdateCertificateDto } from './dto/update-certificate.dto';
 import { Certificate } from './interfaces/certificate.interface';
 import { ResponseDto } from 'src/common/response.dto';
 
-@Controller('certificates')
+@Controller('events/:eventId/certificates')
 export class CertificateController {
   constructor(private readonly certificateService: CertificateService) {}
 
-  @Get('search')
-  async findWithFilters(
-    @Query() query: Partial<Certificate>,
-  ): Promise<ResponseDto<Certificate[]>> {
-    const result = await this.certificateService.findWithFilters(query);
-    return result.length > 0
-      ? new ResponseDto('success', 'Certificados encontrados', result)
-      : new ResponseDto('error', 'No se encontraron certificados');
-  }
-
   @Get()
-  async findAll(): Promise<ResponseDto<Certificate[]>> {
-    const result = await this.certificateService.findAll();
+  async findAll(@Param('eventId') eventId: string): Promise<ResponseDto<Certificate[]>> {
+    const result = await this.certificateService.findByEvent(eventId);
     return result.length > 0
       ? new ResponseDto('success', 'Certificados encontrados', result)
       : new ResponseDto('error', 'No se encontraron certificados');
@@ -47,9 +36,10 @@ export class CertificateController {
 
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createCertificateDto: CreateCertificateDto,
   ): Promise<ResponseDto<Certificate>> {
-    const result = await this.certificateService.create(createCertificateDto);
+    const result = await this.certificateService.create({ ...createCertificateDto, eventId });
     return result
       ? new ResponseDto('success', 'Certificado creado', result)
       : new ResponseDto('error', 'No se pudo crear el certificado');
@@ -60,10 +50,7 @@ export class CertificateController {
     @Param('id') id: string,
     @Body(new ValidationPipe()) updateCertificateDto: UpdateCertificateDto,
   ): Promise<ResponseDto<Certificate>> {
-    const result = await this.certificateService.update(
-      id,
-      updateCertificateDto,
-    );
+    const result = await this.certificateService.update(id, updateCertificateDto);
     return result
       ? new ResponseDto('success', 'Certificado actualizado', result)
       : new ResponseDto('error', 'No se pudo actualizar el certificado');

@@ -16,19 +16,25 @@ import { Room } from './interfaces/room.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
-@Controller('rooms')
+@Controller('events/:eventId/rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @Get('search')
   async findWithFilters(
-    @Query() query: Partial<Room>,
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
   ): Promise<ResponseDto<any>> {
-    const result = await this.roomsService.findWithFilters(
-      query,
-      paginationDto,
-    );
+    const result = await this.roomsService.findWithFilters(eventId, paginationDto);
+    return new ResponseDto('success', 'Salas encontradas', result);
+  }
+
+  @Get()
+  async findAll(
+    @Param('eventId') eventId: string,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ResponseDto<any>> {
+    const result = await this.roomsService.findWithFilters(eventId, paginationDto);
     return new ResponseDto('success', 'Salas encontradas', result);
   }
 
@@ -40,19 +46,12 @@ export class RoomsController {
       : new ResponseDto('error', 'No se encontró la sala');
   }
 
-  @Get()
-  async findAll(
-    @Query() paginationDto: PaginationDto,
-  ): Promise<ResponseDto<any>> {
-    const result = await this.roomsService.findAll(paginationDto);
-    return new ResponseDto('success', 'Salas encontradas', result);
-  }
-
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createRoomDto: CreateRoomDto,
   ): Promise<ResponseDto<Room>> {
-    const result = await this.roomsService.create(createRoomDto);
+    const result = await this.roomsService.create({ ...createRoomDto, eventId });
     return result
       ? new ResponseDto('success', 'Sala creada', result)
       : new ResponseDto('error', 'No se pudo crear la sala');

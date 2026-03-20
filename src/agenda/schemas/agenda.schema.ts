@@ -20,6 +20,7 @@ export const AgendaSchema = new mongoose.Schema(
         },
         room: { type: String, required: false },
         typeSession: { type: String, required: false },
+        requiresAttendance: { type: Boolean, default: false },
         subSessions: [
           {
             title: { type: String, required: true },
@@ -38,6 +39,10 @@ export const AgendaSchema = new mongoose.Schema(
         ],
       },
     ],
+    isPublished: { type: Boolean, default: false },
+    publishedAt: { type: Date, default: null },
+    dressCode: { type: String, default: '' },
+    room: { type: String, default: '' },
   },
   { timestamps: true },
 );

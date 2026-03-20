@@ -16,41 +16,27 @@ import { Attendee } from './interfaces/attendee.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
-@Controller('attendees')
+@Controller('events/:eventId/attendees')
 export class AttendeeController {
   constructor(private readonly attendeeService: AttendeeService) {}
 
   @Get('search')
   async findWithFilters(
-    @Query() query: Partial<Attendee>,
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
-  ): Promise<
-    ResponseDto<{
-      items: Attendee[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.attendeeService.findWithFilters1(
-      
-      paginationDto,
-    );
+  ): Promise<ResponseDto<any>> {
+    const result = await this.attendeeService.findByEvent(eventId, paginationDto);
     return result.items.length > 0
       ? new ResponseDto('success', 'Asistentes encontrados', result)
       : new ResponseDto('error', 'No se encontraron asistentes');
   }
 
   @Get()
-  async findAll(@Query() paginationDto: PaginationDto): Promise<
-    ResponseDto<{
-      items: Attendee[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.attendeeService.findAll(paginationDto);
+  async findAll(
+    @Param('eventId') eventId: string,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ResponseDto<any>> {
+    const result = await this.attendeeService.findByEvent(eventId, paginationDto);
     return result.items.length > 0
       ? new ResponseDto('success', 'Asistentes encontrados', result)
       : new ResponseDto('error', 'No se encontraron asistentes');
@@ -66,9 +52,10 @@ export class AttendeeController {
 
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createAttendeeDto: CreateAttendeeDto,
   ): Promise<ResponseDto<Attendee>> {
-    const result = await this.attendeeService.create(createAttendeeDto);
+    const result = await this.attendeeService.create({ ...createAttendeeDto, eventId });
     return result
       ? new ResponseDto('success', 'Asistente creado', result)
       : new ResponseDto('error', 'No se pudo crear el asistente');
@@ -79,11 +66,7 @@ export class AttendeeController {
     @Body('attendeeId') attendeeId: string,
   ): Promise<ResponseDto<Attendee>> {
     try {
-      const result = await this.attendeeService.incrementCertificateDownloads({
-        attendeeId,
-       
-      });
-
+      const result = await this.attendeeService.incrementCertificateDownloads({ attendeeId });
       return result
         ? new ResponseDto('success', 'Descarga registrada', result)
         : new ResponseDto('error', 'No se encontró el asistente');

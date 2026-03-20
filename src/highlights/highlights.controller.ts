@@ -16,31 +16,36 @@ import { UpdateHighlightDto } from './dto/update-highlight.dto';
 import { Highlight } from './interfaces/highlight.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { EventExistsDto } from './schemas/highlight.schema';
 
-
-@Controller('highlights')
+@Controller('events/:eventId/highlights')
 export class HighlightsController {
   constructor(private readonly highlightsService: HighlightsService) {}
 
   @Get('search')
   async findWithFilters(
-    @Query() query: Partial<Highlight>,
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
-  ): Promise<
-    ResponseDto<{
-      items: Highlight[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.highlightsService.findWithFilters(
-      paginationDto,
-    );
+  ): Promise<ResponseDto<any>> {
+    const result = await this.highlightsService.findWithFilters(eventId, paginationDto);
     return result.items.length > 0
       ? new ResponseDto('success', 'Highlights encontrados', result)
       : new ResponseDto('error', 'No se encontraron highlights');
+  }
+
+  @Get()
+  async findAll(
+    @Param('eventId') eventId: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    const result = await this.highlightsService.findWithFilters(eventId, paginationDto);
+    return {
+      data: {
+        items: result.items,
+        totalItems: result.totalItems,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+      },
+    };
   }
 
   @Get(':id')
@@ -51,33 +56,12 @@ export class HighlightsController {
       : new ResponseDto('error', 'No se encontró el highlight');
   }
 
-  @Get()
-  async findAll(
-    @Query() paginationDto: PaginationDto,
-  ) {
-    console.log('📥 Query params recibidos:', paginationDto); // Debug
-    
-    const result = await this.highlightsService.findWithFilters(
-     
-      paginationDto,
-      
-    );
-
-    return {
-      data: {
-        items: result.items,
-        totalItems: result.totalItems,
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-      }
-    };
-  }
-
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createHighlightDto: CreateHighlightDto,
   ): Promise<ResponseDto<Highlight>> {
-    const result = await this.highlightsService.create(createHighlightDto);
+    const result = await this.highlightsService.create({ ...createHighlightDto, eventId });
     return result
       ? new ResponseDto('success', 'Highlight creado', result)
       : new ResponseDto('error', 'No se pudo crear el highlight');
@@ -102,10 +86,4 @@ export class HighlightsController {
       ? new ResponseDto('success', 'Highlight eliminado', result)
       : new ResponseDto('error', 'No se pudo eliminar el highlight');
   }
-@Post('event/exists')
-async eventHasHighlights(
-  @Body() body: EventExistsDto,
-): Promise<ResponseDto<{ hasHighlights: any }>> {
-  const hasHighlights = await this.highlightsService.eventHasHighlights(body.eventId);
-  return new ResponseDto('success', 'Consulta realizada', { hasHighlights });
-}}
+}

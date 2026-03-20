@@ -72,6 +72,31 @@ export class MemberService {
   async remove(id: string): Promise<Member | null> {
     return this.memberModel.findByIdAndDelete(id).exec();
   }
+
+  /**
+   * Buscar membresía activa de un usuario en una organización específica.
+   * Usado por TenantMiddleware para verificar autorización.
+   * NOTA: userId se almacena como String en el schema por compatibilidad.
+   */
+  async findActiveMember(
+    userId: string,
+    organizationId: string,
+  ): Promise<Member | null> {
+    return this.memberModel
+      .findOne({ userId, organizationId, memberActive: true })
+      .exec();
+  }
+
+  /**
+   * Obtener todas las membresías activas de un usuario con datos de la organización.
+   * Usado para el selector de organización en usuarios multi-org.
+   */
+  async findActiveOrganizationsByUser(userId: string): Promise<Member[]> {
+    return this.memberModel
+      .find({ userId, memberActive: true })
+      .populate('organizationId', 'name slug branding bundleIds auth features')
+      .exec();
+  }
   async findMembersByEmail(paginationDto: PaginationDto): Promise<{
     items: any[];
     totalItems: number;

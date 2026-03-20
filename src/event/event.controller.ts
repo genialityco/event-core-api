@@ -44,7 +44,7 @@ export class EventController {
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ResponseDto<EventInterface>> {
-    const result = await this.eventService.findOne(id);
+    const result = await this.eventService.findOneById(id);
     return result
       ? new ResponseDto('success', 'Evento encontrado', result)
       : new ResponseDto('error', 'No se encontró el evento');
@@ -77,7 +77,7 @@ export class EventController {
   async create(
     @Body(new ValidationPipe()) createEventDto: CreateEventDto,
   ): Promise<ResponseDto<EventInterface>> {
-    const result = await this.eventService.create(createEventDto);
+    const result = await this.eventService.createEvent(createEventDto);
     return result
       ? new ResponseDto('success', 'Evento creado', result)
       : new ResponseDto('error', 'No se pudo crear el evento');
@@ -89,7 +89,7 @@ export class EventController {
     @Param('id') id: string,
     @Body(new ValidationPipe()) updateEventDto: UpdateEventDto,
   ): Promise<ResponseDto<EventInterface>> {
-    const result = await this.eventService.update(id, updateEventDto);
+    const result = await this.eventService.updateEvent(id, updateEventDto);
     return result
       ? new ResponseDto('success', 'Evento actualizado', result)
       : new ResponseDto('error', 'No se pudo actualizar el evento');
@@ -97,7 +97,7 @@ export class EventController {
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<ResponseDto<EventInterface>> {
-    const result = await this.eventService.remove(id);
+    const result = await this.eventService.removeById(id);
     return result
       ? new ResponseDto('success', 'Evento eliminado', result)
       : new ResponseDto('error', 'No se pudo eliminar el evento');

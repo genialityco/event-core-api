@@ -17,19 +17,16 @@ import { Survey } from './interfaces/survey.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
-@Controller('surveys')
+@Controller('events/:eventId/surveys')
 export class SurveyController {
   constructor(private readonly SurveyService: SurveyService) {}
 
-  @Get('search')
-  async findWithFilters(
-    @Query() filters: Partial<Survey>,
+  @Get()
+  async findAll(
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
   ): Promise<ResponseDto<any>> {
-    const result = await this.SurveyService.findWithFilters(
-      filters,
-      paginationDto,
-    );
+    const result = await this.SurveyService.findByEvent(eventId, paginationDto);
     return new ResponseDto('success', 'Surveys found', result);
   }
 
@@ -41,19 +38,12 @@ export class SurveyController {
       : new ResponseDto('error', 'Survey not found');
   }
 
-  @Get()
-  async findAll(
-    @Query() paginationDto: PaginationDto,
-  ): Promise<ResponseDto<any>> {
-    const result = await this.SurveyService.findAll(paginationDto);
-    return new ResponseDto('success', 'Surveys found', result);
-  }
-
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createSurveyDto: CreateSurveyDto,
   ): Promise<ResponseDto<Survey>> {
-    const result = await this.SurveyService.create(createSurveyDto);
+    const result = await this.SurveyService.create({ ...createSurveyDto, eventId });
     return result
       ? new ResponseDto('success', 'Survey created', result)
       : new ResponseDto('error', 'Survey could not be created');

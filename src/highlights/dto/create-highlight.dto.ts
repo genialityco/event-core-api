@@ -11,8 +11,7 @@ export class CreateHighlightDto {
   readonly organizationId: Types.ObjectId;
 
   @IsMongoId()
-  @IsNotEmpty()
-  readonly eventId: Types.ObjectId;
+  readonly eventId: string;
 
   @IsString()
   @IsNotEmpty()

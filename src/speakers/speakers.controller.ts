@@ -16,22 +16,34 @@ import { UpdateSpeakerDto } from './dto/update-speaker.dto';
 import { Speaker } from './interfaces/speakers.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
-@Controller('speakers')
+
+@Controller('events/:eventId/speakers')
 export class SpeakersController {
   constructor(private readonly speakersService: SpeakersService) {}
 
   @Get('search')
   async findWithFilters(
-    @Query() filters: Partial<Speaker>,
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
   ): Promise<ResponseDto<any>> {
-    console.log('📥 [SEARCH] Query params recibidos:', paginationDto);
-    
-    const result = await this.speakersService.findWithFilters(
- 
-      paginationDto,
-    );
+    const result = await this.speakersService.findWithFilters(eventId, paginationDto);
     return new ResponseDto('success', 'Speakers encontrados', result);
+  }
+
+  @Get()
+  async findAll(
+    @Param('eventId') eventId: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    const result = await this.speakersService.findWithFilters(eventId, paginationDto);
+    return {
+      data: {
+        items: result.items,
+        totalItems: result.totalItems,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+      },
+    };
   }
 
   @Get(':id')
@@ -42,33 +54,12 @@ export class SpeakersController {
       : new ResponseDto('error', 'No se encontró el speaker');
   }
 
-  @Get()
-  async findAll(
-    @Query() paginationDto: PaginationDto,
-  ) {
-    console.log('📥 Query params recibidos:', paginationDto); // Debug
-    
-    const result = await this.speakersService.findWithFilters(
-     
-      paginationDto,
-      
-    );
-
-    return {
-      data: {
-        items: result.items,
-        totalItems: result.totalItems,
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-      }
-    };
-  }
-
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createSpeakerDto: CreateSpeakerDto,
   ): Promise<ResponseDto<Speaker>> {
-    const result = await this.speakersService.create(createSpeakerDto);
+    const result = await this.speakersService.create({ ...createSpeakerDto, eventId });
     return result
       ? new ResponseDto('success', 'Speaker creado', result)
       : new ResponseDto('error', 'No se pudo crear el speaker');

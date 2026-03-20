@@ -18,24 +18,16 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ResponseDto } from 'src/common/response.dto';
 import { Agenda } from './interfaces/agenda.interface';
 
-@Controller('agendas')
+@Controller('events/:eventId/agendas')
 export class AgendaController {
   constructor(private readonly agendaService: AgendaService) {}
 
   @Get('search')
   async findWithFilters(
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
-  ): Promise<
-    ResponseDto<{
-      items: Agenda[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.agendaService.findWithFilters(
-      paginationDto,
-    );
+  ): Promise<ResponseDto<any>> {
+    const result = await this.agendaService.findWithFilters(eventId, paginationDto);
     return result.items.length > 0
       ? new ResponseDto('success', 'Agendas encontradas', result)
       : new ResponseDto('error', 'No se encontraron agendas');
@@ -43,23 +35,17 @@ export class AgendaController {
 
   @Get()
   async findAll(
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
   ) {
-    console.log('📥 Query params recibidos:', paginationDto); // Debug
-    
-    const result = await this.agendaService.findWithFilters(
-     
-      paginationDto,
-     
-    );
-
+    const result = await this.agendaService.findWithFilters(eventId, paginationDto);
     return {
       data: {
         items: result.items,
         totalItems: result.totalItems,
         totalPages: result.totalPages,
         currentPage: result.currentPage,
-      }
+      },
     };
   }
 
@@ -73,13 +59,15 @@ export class AgendaController {
 
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createAgendaDto: CreateAgendaDto,
   ): Promise<ResponseDto<Agenda>> {
-    const result = await this.agendaService.create(createAgendaDto);
+    const result = await this.agendaService.create({ ...createAgendaDto, eventId } as any);
     return result
       ? new ResponseDto('success', 'Agenda creada', result)
       : new ResponseDto('error', 'No se pudo crear la agenda');
   }
+
   @Patch(':id')
   @Put(':id')
   async update(
@@ -91,8 +79,6 @@ export class AgendaController {
       ? new ResponseDto('success', 'Agenda actualizada', result)
       : new ResponseDto('error', 'No se pudo actualizar la agenda');
   }
-
-
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<ResponseDto<Agenda>> {
@@ -112,5 +98,4 @@ export class AgendaController {
       ? new ResponseDto('success', 'Horas ajustadas correctamente', result)
       : new ResponseDto('error', 'No se pudo ajustar las horas de la agenda');
   }
-
 }

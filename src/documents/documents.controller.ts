@@ -16,61 +16,46 @@ import { DocumentInterface } from './interfaces/document.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
-@Controller('documents')
+@Controller('events/:eventId/documents')
 export class DocumentsController {
   constructor(private readonly documentService: DocumentService) {}
 
   @Get('search')
   async findWithFilters(
-    @Query() query: Partial<DocumentInterface>,
+    @Param('eventId') eventId: string,
     @Query() paginationDto: PaginationDto,
-  ): Promise<
-    ResponseDto<{
-      items: DocumentInterface[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.documentService.findWithFilters(
-      query,
-      paginationDto,
-    );
+  ): Promise<ResponseDto<any>> {
+    const result = await this.documentService.findWithFilters(eventId, paginationDto);
+    return result.items.length > 0
+      ? new ResponseDto('success', 'Documentos encontrados', result)
+      : new ResponseDto('error', 'No se encontraron documentos');
+  }
+
+  @Get()
+  async findAll(
+    @Param('eventId') eventId: string,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ResponseDto<any>> {
+    const result = await this.documentService.findWithFilters(eventId, paginationDto);
     return result.items.length > 0
       ? new ResponseDto('success', 'Documentos encontrados', result)
       : new ResponseDto('error', 'No se encontraron documentos');
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<ResponseDto<DocumentInterface>> {
+  async findOne(@Param('id') id: string): Promise<ResponseDto<DocumentInterface>> {
     const result = await this.documentService.findOne(id);
     return result
       ? new ResponseDto('success', 'Documento encontrado', result)
       : new ResponseDto('error', 'No se encontró el documento');
   }
 
-  @Get()
-  async findAll(@Query() paginationDto: PaginationDto): Promise<
-    ResponseDto<{
-      items: DocumentInterface[];
-      totalItems: number;
-      totalPages: number;
-      currentPage: number;
-    }>
-  > {
-    const result = await this.documentService.findAll(paginationDto);
-    return result.items.length > 0
-      ? new ResponseDto('success', 'Documentos encontrados', result)
-      : new ResponseDto('error', 'No se encontraron documentos');
-  }
-
   @Post()
   async create(
+    @Param('eventId') eventId: string,
     @Body(new ValidationPipe()) createDocumentDto: CreateDocumentDto,
   ): Promise<ResponseDto<DocumentInterface>> {
-    const result = await this.documentService.create(createDocumentDto);
+    const result = await this.documentService.create({ ...createDocumentDto, eventId });
     return result
       ? new ResponseDto('success', 'Documento creado', result)
       : new ResponseDto('error', 'No se pudo crear el documento');
@@ -88,9 +73,7 @@ export class DocumentsController {
   }
 
   @Delete(':id')
-  async remove(
-    @Param('id') id: string,
-  ): Promise<ResponseDto<DocumentInterface>> {
+  async remove(@Param('id') id: string): Promise<ResponseDto<DocumentInterface>> {
     const result = await this.documentService.remove(id);
     return result
       ? new ResponseDto('success', 'Documento eliminado', result)

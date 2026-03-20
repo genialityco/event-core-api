@@ -9,7 +9,7 @@ export const PosterSchema = new Schema(
     authors: [{ type: String, required: true }],
     votes: { type: Number, default: 0 },
     urlPdf: { type: String, required: true },
-    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: false },
+    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true },
     voters: [{ type: Schema.Types.ObjectId, ref: 'User' }] 
   },
   { timestamps: true },

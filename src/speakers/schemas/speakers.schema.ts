@@ -8,6 +8,8 @@ export const SpeakerSchema = new Schema(
     isInternational: { type: Boolean, required: true },
     imageUrl: { type: String, required: true },
     eventId: { type: Schema.Types.ObjectId, ref: 'Event' },
+    role: { type: String, default: '' },
+    organization: { type: String, default: '' },
   },
   { timestamps: true },
 );

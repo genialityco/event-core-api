@@ -1,76 +1,65 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { EventInterface } from './interfaces/event.interface';
-import { Model } from 'mongoose';
+import { Document, Model } from 'mongoose';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { findWithFilters } from 'src/common/common.service';
+import { BaseTenantRepository } from '../core/database/base-tenant.repository';
+import { TenantContextService } from '../core/tenant/tenant-context.service';
 
+type EventDoc = EventInterface & Document;
+
+/**
+ * EventService — MÓDULO PILOTO de migración a multi-tenant.
+ *
+ * Extiende BaseTenantRepository: TODAS las queries están automáticamente
+ * filtradas por organizationId del TenantContextService (AsyncLocalStorage).
+ *
+ * ELIMINADO:
+ * - find() sin filtro de org → imposible con BaseTenantRepository
+ * - findWithFilters() inseguro → reemplazado por findWithPagination()
+ * - organizationId del body/query → viene SOLO del TenantContext
+ */
 @Injectable()
-export class EventService {
+export class EventService extends BaseTenantRepository<EventDoc> {
   constructor(
-    @InjectModel('Event') private EventModel: Model<EventInterface>,
-  ) {}
-
-  // Crear un nuevo evento
-  async create(eventDto: CreateEventDto): Promise<EventInterface> {
-    const newEvent = new this.EventModel(eventDto);
-    return newEvent.save();
+    @InjectModel('Event') eventModel: Model<EventDoc>,
+    tenantCtx: TenantContextService,
+  ) {
+    super(eventModel, tenantCtx);
   }
 
-  // Actualizar un evento por ID
-  async update(
-    id: string,
-    eventDto: UpdateEventDto,
-  ): Promise<EventInterface | null> {
-    return this.EventModel.findByIdAndUpdate(id, eventDto, {
-      new: true,
-    }).exec();
+  /**
+   * Crear evento — organizationId del DTO es IGNORADO.
+   * Siempre se inyecta desde TenantContextService.
+   */
+  async createEvent(dto: CreateEventDto): Promise<EventDoc> {
+    return super.create(dto as any);
   }
 
-  // Obtener todos los eventos con paginación
-  async findAll(paginationDto: PaginationDto): Promise<{
-    items: EventInterface[];
-    totalItems: number;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    const { page = 1, limit = 100 } = paginationDto;
-    const skip = (page - 1) * limit;
-
-    const totalItems = await this.EventModel.countDocuments().exec();
-    const items = await this.EventModel.find().skip(skip).limit(limit).exec();
-    const totalPages = Math.ceil(totalItems / limit);
-
-    return { items, totalItems, totalPages, currentPage: page };
+  async updateEvent(id: string, dto: UpdateEventDto): Promise<EventDoc | null> {
+    return super.update(id, dto as any);
   }
 
-  // Buscar eventos con filtros y paginación
-  async findWithFilters(
-   
-    paginationDto: PaginationDto,
-    
-  ): Promise<{
-    items: any[];
-    totalItems: number;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    return findWithFilters<EventInterface>(
-    this.EventModel,
-    paginationDto,
-    paginationDto.filters
-  );
-}
-
-  // Obtener un evento por ID
-  async findOne(id: string): Promise<EventInterface | null> {
-    return this.EventModel.findById(id).exec();
+  /**
+   * findWithFilters → alias seguro de findWithPagination.
+   * Nombre original preservado para no romper EventController.
+   */
+  async findWithFilters(paginationDto: PaginationDto) {
+    return this.findWithPagination(paginationDto);
   }
 
-  // Eliminar un evento por ID
-  async remove(id: string): Promise<EventInterface | null> {
-    return this.EventModel.findByIdAndDelete(id).exec();
+  async findOneById(id: string): Promise<EventDoc | null> {
+    return super.findById(id);
+  }
+
+  async removeById(id: string): Promise<EventDoc | null> {
+    return super.delete(id);
+  }
+
+  /** Eventos próximos de la organización activa */
+  async findUpcoming() {
+    return this.findAll({ startDate: { $gte: new Date() } } as any);
   }
 }

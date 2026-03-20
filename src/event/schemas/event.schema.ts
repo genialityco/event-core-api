@@ -51,3 +51,7 @@ export const EventSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Índice compuesto crítico para queries multi-tenant
+EventSchema.index({ organizationId: 1, startDate: -1 });
+EventSchema.index({ organizationId: 1, _id: 1 });

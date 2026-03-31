@@ -32,16 +32,21 @@ export const OrganizationSchema = new mongoose.Schema(
       attendance:  { type: Boolean, default: false },
       usefulInfo:  { type: Boolean, default: false },
       photos:      { type: Boolean, default: false },
+      // Tab que se muestra por defecto al iniciar sesión — null = primer tab habilitado
+      defaultModule: { type: String, default: null },
     },
 
     // Config white-label consumida por el frontend (fallback local en la app)
     branding: {
-      primaryColor: { type: String, default: '#000000' },
-      secondaryColor: { type: String, default: '#ffffff' },
-      tabBarColor: { type: String, default: '#ffffff' },
-      logoUrl: { type: String },
-      appName: { type: String },
-      fontFamily: { type: String },
+      primaryColor:        { type: String, default: '#031249' },
+      primaryDarkColor:    { type: String, default: '#020d30' },
+      secondaryColor:      { type: String, default: '#ffffff' },
+      tabBarColor:         { type: String, default: '#ffffff' }, // fondo del tab bar
+      tabBarActiveColor:   { type: String, default: null },      // null → usa primaryColor
+      tabBarInactiveColor: { type: String, default: '#9E9E9E' },
+      logoUrl:   { type: String },
+      appName:   { type: String },
+      fontFamily:{ type: String },
     },
 
     // Mapeo bundleId → tenant para resolución automática (SOLO UX, no seguridad)

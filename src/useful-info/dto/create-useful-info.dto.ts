@@ -15,7 +15,15 @@ export class CreateUsefulInfoDto {
 
   @IsString()
   @IsOptional()
+  title_en?: string;
+
+  @IsString()
+  @IsOptional()
   content?: string;
+
+  @IsString()
+  @IsOptional()
+  content_en?: string;
 
   @IsString()
   @IsOptional()

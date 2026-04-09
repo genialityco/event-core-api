@@ -5,14 +5,17 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { MemberSchema } from 'src/member/schemas/member.schema';
 import { AttendeeSchema } from 'src/attendee/schemas/attendee.schema';
+import { TravelerInfoSchema } from 'src/traveler/schemas/traveler-info.schema';
+import { AuthService } from 'src/auth/auth.service';
 
 @Module({
   imports: [MongooseModule.forFeature([
     { name: 'User', schema: UserSchema },
-      { name: 'Member', schema: MemberSchema },
-      { name: 'Attendee', schema: AttendeeSchema },
+    { name: 'Member', schema: MemberSchema },
+    { name: 'Attendee', schema: AttendeeSchema },
+    { name: 'TravelerInfo', schema: TravelerInfoSchema },
   ])],
-  providers: [UserService],
+  providers: [UserService, AuthService],
   controllers: [UserController],
   exports: [MongooseModule],
 })

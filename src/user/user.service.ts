@@ -13,7 +13,12 @@ import { UserFirebase } from './schemas/user.schema';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel('User') private userModel: Model<User>, @InjectModel('Member') private memberModel: Model<Member>, @InjectModel('Attendee') private attendeeModel: Model<Attendee>) {}
+  constructor(
+    @InjectModel('User') private userModel: Model<User>,
+    @InjectModel('Member') private memberModel: Model<Member>,
+    @InjectModel('Attendee') private attendeeModel: Model<Attendee>,
+    @InjectModel('TravelerInfo') private travelerInfoModel: Model<any>,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = new this.userModel(createUserDto);
@@ -108,7 +113,29 @@ export class UserService {
     user.expoPushToken = expoPushToken;
     return user.save();
   }
-async addOrCreateAttendee(payload: {
+async deleteMyAccount(firebaseUid: string): Promise<void> {
+    // 1. Encontrar el usuario en MongoDB por firebaseUid
+    const user = await this.userModel.findOne({ firebaseUid });
+    if (user) {
+      const userId = String(user._id);
+      // 2. Borrar todos los datos asociados en paralelo
+      await Promise.all([
+        this.memberModel.deleteMany({ userId }),
+        this.attendeeModel.deleteMany({ userId }),
+        this.travelerInfoModel.deleteMany({ userId }),
+        this.userModel.findByIdAndDelete(userId),
+      ]);
+    }
+    // 3. Borrar de Firebase Auth (con o sin registro en Mongo)
+    try {
+      await admin.auth().deleteUser(firebaseUid);
+    } catch (e: any) {
+      // Si el usuario ya no existe en Firebase, ignorar el error
+      if (e.code !== 'auth/user-not-found') throw e;
+    }
+  }
+
+  async addOrCreateAttendee(payload: {
   user: UserFirebase;
   attendee: Attendee;
   member: Member;

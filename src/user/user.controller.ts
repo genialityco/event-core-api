@@ -8,6 +8,10 @@ import {
   Body,
   Query,
   ValidationPipe,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -16,6 +20,7 @@ import { User } from './interfaces/user.interface';
 import { ResponseDto } from 'src/common/response.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { addOrCreateAttendee } from './schemas/user.schema';
+import { FirebaseAuthGuard } from 'src/auth/guards/auth.guard';
 
 
 @Controller('users')
@@ -66,6 +71,14 @@ export class UserController {
   async remove(@Param('id') id: string): Promise<ResponseDto<User>> {
     const result = await this.userService.remove(id);
     return new ResponseDto('success', 'Usuario eliminado', result);
+  }
+
+  @Delete('me')
+  @UseGuards(FirebaseAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMyAccount(@Req() req: any): Promise<void> {
+    const firebaseUid: string = req.user.uid;
+    await this.userService.deleteMyAccount(firebaseUid);
   }
 
   @Post('updatePushToken')

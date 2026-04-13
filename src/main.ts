@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ValidationPipe } from '@nestjs/common';
 import * as morgan from 'morgan';
 import * as os from 'os';
 import * as bodyParser from 'body-parser';
@@ -22,6 +23,13 @@ async function bootstrap() {
 
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,       // Activa class-transformer: @Transform, @Type funcionan
+      whitelist: false,      // No descartar propiedades extra (PaginationDto tiene [key: string]: any)
+      forbidNonWhitelisted: false,
+    }),
+  );
   app.use(morgan('combined'));
 
   // Configura el límite de tamaño de la solicitud

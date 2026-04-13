@@ -86,15 +86,21 @@ export async function findWithFilters<T>(
             );
           }
         } else if (key.includes('Id')) {
-          try {
-            Object.assign(filterQuery, {
-              [key]: new Types.ObjectId(stringValue),
-            });
-          } catch {
-            Object.assign(filterQuery, { [key]: stringValue });
+          if (!stringValue || !/^[0-9a-fA-F]{24}$/.test(stringValue)) {
+            // Skip invalid or empty ObjectId — avoids Mongoose CastError
+            console.log(`⚠️ Campo ${key} ignorado: valor inválido para ObjectId "${stringValue}"`);
+          } else {
+            try {
+              Object.assign(filterQuery, {
+                [key]: new Types.ObjectId(stringValue),
+              });
+            } catch {
+              console.log(`❌ Error creando ObjectId para ${key}: "${stringValue}"`);
+            }
           }
         } else {
-          if (key === 'attended' && typeof value === 'string') {
+          const booleanFields = ['attended', 'isPublic', 'memberActive', 'isActive', 'active'];
+          if (booleanFields.includes(key) && typeof value === 'string') {
             const boolValue = value.toLowerCase() === 'true';
             Object.assign(filterQuery, { [key]: boolValue });
             console.log(
@@ -129,9 +135,19 @@ export async function findWithFilters<T>(
     }
   }
 
-  console.log('🔍 Filtros recibidos:', filtersArray);
+  // Normalizar filtersArray: puede llegar como array o como objeto indexado
+  // {"0": {...}, "1": {...}} cuando class-transformer no transforma el dto
+  const normalizedFilters: FilterDto[] = Array.isArray(filtersArray)
+    ? filtersArray
+    : filtersArray && typeof filtersArray === 'object'
+      ? Object.keys(filtersArray as any)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .map((k) => (filtersArray as any)[k])
+      : [];
 
-  filtersArray.forEach((filter) => {
+  console.log('🔍 Filtros recibidos:', normalizedFilters);
+
+  normalizedFilters.forEach((filter) => {
     const { field, operator = 'eq', value } = filter as any;
     if (!value && value !== 0 && value !== false) return;
 
@@ -180,12 +196,16 @@ export async function findWithFilters<T>(
             return;
           }
         } else if (field.includes('Id')) {
+          if (!stringValue || !/^[0-9a-fA-F]{24}$/.test(stringValue)) {
+            console.log(`⚠️ Campo ${field} ignorado: valor inválido para ObjectId "${stringValue}"`);
+            return;
+          }
           try {
             Object.assign(filterQuery, {
               [field]: new Types.ObjectId(stringValue),
             });
           } catch {
-            Object.assign(filterQuery, { [field]: stringValue });
+            console.log(`❌ Error creando ObjectId para ${field}: "${stringValue}"`);
           }
         } else {
           Object.assign(filterQuery, { [field]: value });

@@ -36,6 +36,10 @@ export class HighlightsService {
     const limit = Number((paginationDto as any).pageSize || (paginationDto as any).limit || 50);
     const skip = (page - 1) * limit;
 
+    if (!eventId || !/^[0-9a-fA-F]{24}$/.test(eventId)) {
+      return { items: [], totalItems: 0, totalPages: 0, currentPage: page };
+    }
+
     const filter: any = { eventId: new Types.ObjectId(eventId) };
 
     const knownKeys = new Set(['page', 'limit', 'current', 'pageSize', 'sorters', 'filters', '_start', '_end', '_sort', '_order']);

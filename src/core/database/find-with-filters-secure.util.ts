@@ -48,7 +48,16 @@ export async function findWithFiltersSecure<T>(
   });
 
   // Procesar array de filtros (sin organizationId)
-  const filters: any[] = dtoAny.filters ?? [];
+  // Normalizar: puede llegar como array o como objeto indexado {"0": {...}, "1": {...}}
+  // cuando class-transformer no transforma (ej. sin ValidationPipe global)
+  const filtersRaw = dtoAny.filters;
+  const filters: any[] = Array.isArray(filtersRaw)
+    ? filtersRaw
+    : filtersRaw && typeof filtersRaw === 'object'
+      ? Object.keys(filtersRaw)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .map((k) => filtersRaw[k])
+      : [];
   filters.forEach((filter: any) => {
     const { field, operator = 'eq', value } = filter;
     if (!value && value !== 0 && value !== false) return;
@@ -92,6 +101,22 @@ export async function findWithFiltersSecure<T>(
   };
 }
 
+/**
+ * Convierte un valor de filtro al tipo correcto para comparaciones ($gt, $gte, $lt, $lte).
+ * Prioridad: número → fecha ISO → string original.
+ */
+function parseComparableValue(value: any): any {
+  const num = Number(value);
+  if (!isNaN(num)) return num;
+
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return value;
+}
+
 function appendToFilter(
   query: Record<string, any>,
   field: string,
@@ -124,16 +149,16 @@ function appendToFilter(
       query[field] = { $regex: new RegExp(`${str}$`, 'i') };
       break;
     case 'gt':
-      query[field] = { $gt: isNaN(Number(value)) ? value : Number(value) };
+      query[field] = { $gt: parseComparableValue(value) };
       break;
     case 'gte':
-      query[field] = { $gte: isNaN(Number(value)) ? value : Number(value) };
+      query[field] = { $gte: parseComparableValue(value) };
       break;
     case 'lt':
-      query[field] = { $lt: isNaN(Number(value)) ? value : Number(value) };
+      query[field] = { $lt: parseComparableValue(value) };
       break;
     case 'lte':
-      query[field] = { $lte: isNaN(Number(value)) ? value : Number(value) };
+      query[field] = { $lte: parseComparableValue(value) };
       break;
     case 'ne':
       query[field] = { $ne: value };

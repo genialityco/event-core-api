@@ -12,6 +12,8 @@ export const OrganizationSchema = new mongoose.Schema(
     auth: {
       emailPassword: { type: Boolean, default: true },
       emailOtp: { type: Boolean, default: false },
+      // Cuando true, solo correos pre-registrados pueden crear cuenta
+      requirePreRegistration: { type: Boolean, default: false },
     },
 
     // Feature flags — source of truth en backend

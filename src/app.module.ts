@@ -93,6 +93,8 @@ export class AppModule implements NestModule {
         { path: 'auth/otp/login', method: RequestMethod.POST },
         { path: 'auth/otp/send', method: RequestMethod.POST },
         { path: 'auth/otp/verify', method: RequestMethod.POST },
+        { path: 'auth/otp/validate-email', method: RequestMethod.POST },
+        { path: 'auth/otp/org-config', method: RequestMethod.GET },
         // Rutas admin del CMS — sin auth de tenant
         { path: 'admin/(.*)', method: RequestMethod.ALL },
       )

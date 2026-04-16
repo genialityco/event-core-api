@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -22,6 +23,9 @@ export class OtpService {
     @InjectModel('Otp') private readonly otpModel: Model<OtpDocument>,
     @InjectModel('User') private readonly userModel: Model<any>,
     @InjectModel('Member') private readonly memberModel: Model<any>,
+    @InjectModel('Organization') private readonly orgModel: Model<any>,
+    @InjectModel('PreRegisteredAttendee')
+    private readonly preRegModel: Model<any>,
   ) {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -34,16 +38,86 @@ export class OtpService {
     });
   }
 
+  // ─── Config pública de la org (sin autenticación) ────────────────────────
+
+  /** Devuelve solo los campos públicos necesarios antes de que el usuario inicie sesión. */
+  async getOrgConfig(
+    organizationId: string,
+  ): Promise<{ requirePreRegistration: boolean }> {
+    const org = (await this.orgModel
+      .findById(organizationId)
+      .select('auth')
+      .lean()) as any;
+    return {
+      requirePreRegistration: org?.auth?.requirePreRegistration ?? false,
+    };
+  }
+
+  // ─── Validación de correo (antes del registro) ────────────────────────────
+
+  /**
+   * Verifica si un correo puede registrarse en la organización.
+   * Si la org tiene requirePreRegistration=true, el correo debe estar en la lista.
+   * También indica si el usuario ya tiene cuenta (para dirigirlo a login).
+   */
+  async validateEmail(
+    email: string,
+    organizationId: string,
+  ): Promise<{ allowed: boolean; isExistingUser: boolean; message?: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const org = await this.orgModel
+      .findById(organizationId)
+      .select('auth')
+      .lean() as any;
+
+    if (!org) {
+      return { allowed: false, isExistingUser: false, message: 'Organización no encontrada.' };
+    }
+
+    const isExistingUser = !!(await this.userModel
+      .findOne({ email: normalizedEmail })
+      .lean());
+
+    if (!org.auth?.requirePreRegistration) {
+      return { allowed: true, isExistingUser };
+    }
+
+    const preReg = await this.preRegModel
+      .findOne({ email: normalizedEmail, organizationId })
+      .lean();
+
+    if (!preReg) {
+      return {
+        allowed: false,
+        isExistingUser: false,
+        message: 'Este correo no está autorizado para este evento.',
+      };
+    }
+
+    return { allowed: true, isExistingUser };
+  }
+
   // ─── Registro ─────────────────────────────────────────────────────────────
 
   /**
    * Registra un usuario nuevo vía OTP.
-   * 1. Crea cuenta en Firebase (sin contraseña, custom token para login)
-   * 2. Crea User en MongoDB
-   * 3. Crea Member con rol attendee
+   * 1. Verifica whitelist si la org lo requiere
+   * 2. Crea cuenta en Firebase (sin contraseña, custom token para login)
+   * 3. Crea User en MongoDB
+   * 4. Crea Member con rol attendee
+   * 5. Marca el pre-registro como activado
    */
   async register(email: string, name: string, organizationId: string): Promise<void> {
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Verificar whitelist
+    const validation = await this.validateEmail(normalizedEmail, organizationId);
+    if (!validation.allowed) {
+      throw new ForbiddenException(
+        validation.message ?? 'Este correo no está autorizado para este evento.',
+      );
+    }
 
     // Verificar si ya existe en Firebase
     let firebaseUid: string;
@@ -94,6 +168,18 @@ export class OtpService {
       memberActive: true,
       properties: { name, email: normalizedEmail },
     });
+
+    // Marcar pre-registro como activado
+    await this.preRegModel.findOneAndUpdate(
+      { email: normalizedEmail, organizationId },
+      {
+        $set: {
+          isActivated: true,
+          activatedAt: new Date(),
+          activatedByUserId: (mongoUser._id as any).toString(),
+        },
+      },
+    );
 
     this.logger.log(`Registro OTP completado: ${normalizedEmail}`);
   }

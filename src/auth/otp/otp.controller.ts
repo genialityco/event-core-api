@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { OtpService } from './otp.service';
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 
@@ -29,9 +29,39 @@ class RegisterOtpDto {
   organizationId: string;
 }
 
+class ValidateEmailDto {
+  @IsEmail({}, { message: 'Correo electrónico inválido' })
+  email: string;
+
+  @IsNotEmpty({ message: 'La organización es requerida' })
+  @IsString()
+  organizationId: string;
+}
+
 @Controller('auth/otp')
 export class OtpController {
   constructor(private readonly otpService: OtpService) {}
+
+  /**
+   * GET /auth/otp/org-config?organizationId=xxx
+   * Devuelve config pública de la org (requirePreRegistration) sin token.
+   */
+  @Get('org-config')
+  @HttpCode(HttpStatus.OK)
+  async orgConfig(@Query('organizationId') organizationId: string) {
+    return this.otpService.getOrgConfig(organizationId);
+  }
+
+  /**
+   * POST /auth/otp/validate-email
+   * Verifica si un correo está autorizado para registrarse (whitelist check).
+   * Ruta pública — no requiere token ni tenant.
+   */
+  @Post('validate-email')
+  @HttpCode(HttpStatus.OK)
+  async validateEmail(@Body() dto: ValidateEmailDto) {
+    return this.otpService.validateEmail(dto.email, dto.organizationId);
+  }
 
   /** POST /auth/otp/register — Registra usuario sin contraseña */
   @Post('register')

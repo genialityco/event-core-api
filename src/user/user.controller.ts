@@ -67,18 +67,18 @@ export class UserController {
     return new ResponseDto('success', 'Usuario actualizado', result);
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string): Promise<ResponseDto<User>> {
-    const result = await this.userService.remove(id);
-    return new ResponseDto('success', 'Usuario eliminado', result);
-  }
-
   @Delete('me')
   @UseGuards(FirebaseAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMyAccount(@Req() req: any): Promise<void> {
     const firebaseUid: string = req.user.uid;
     await this.userService.deleteMyAccount(firebaseUid);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<ResponseDto<User>> {
+    const result = await this.userService.remove(id);
+    return new ResponseDto('success', 'Usuario eliminado', result);
   }
 
   @Post('updatePushToken')

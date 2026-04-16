@@ -9,6 +9,7 @@ import { AdminSpeakersController } from './admin-speakers.controller';
 import { AdminPhotosController } from './admin-photos.controller';
 import { AdminUsefulInfoController } from './admin-useful-info.controller';
 import { AdminTravelersController } from './admin-travelers.controller';
+import { AdminPreRegistrationController } from './admin-pre-registration.controller';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { UsefulInfoSchema } from 'src/useful-info/schemas/useful-info.schema';
 import { EventSchema } from 'src/event/schemas/event.schema';
@@ -19,6 +20,8 @@ import { HotelSchema } from 'src/hotels/schemas/hotel.schema';
 import { AgendaSchema } from 'src/agenda/schemas/agenda.schema';
 import { SpeakerSchema } from 'src/speakers/schemas/speakers.schema';
 import { PhotoSchema } from 'src/photos/schemas/photo.schema';
+import { PreRegisteredAttendeeSchema } from 'src/pre-registration/schemas/pre-registered-attendee.schema';
+import { OrganizationSchema } from 'src/organization/schemas/organization.schema';
 
 @Module({
   imports: [
@@ -33,6 +36,8 @@ import { PhotoSchema } from 'src/photos/schemas/photo.schema';
       { name: 'Speaker', schema: SpeakerSchema },
       { name: 'Photo', schema: PhotoSchema },
       { name: 'UsefulInfo', schema: UsefulInfoSchema },
+      { name: 'PreRegisteredAttendee', schema: PreRegisteredAttendeeSchema },
+      { name: 'Organization', schema: OrganizationSchema },
     ]),
   ],
   controllers: [
@@ -45,6 +50,7 @@ import { PhotoSchema } from 'src/photos/schemas/photo.schema';
     AdminPhotosController,
     AdminUsefulInfoController,
     AdminTravelersController,
+    AdminPreRegistrationController,
   ],
 })
 export class AdminModule {}

@@ -5,6 +5,8 @@ import { OtpService } from './otp.service';
 import { OtpSchema } from './otp.schema';
 import { UserSchema } from 'src/user/schemas/user.schema';
 import { MemberSchema } from 'src/member/schemas/member.schema';
+import { OrganizationSchema } from 'src/organization/schemas/organization.schema';
+import { PreRegisteredAttendeeSchema } from 'src/pre-registration/schemas/pre-registered-attendee.schema';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { MemberSchema } from 'src/member/schemas/member.schema';
       { name: 'Otp', schema: OtpSchema },
       { name: 'User', schema: UserSchema },
       { name: 'Member', schema: MemberSchema },
+      { name: 'Organization', schema: OrganizationSchema },
+      { name: 'PreRegisteredAttendee', schema: PreRegisteredAttendeeSchema },
     ]),
   ],
   controllers: [OtpController],

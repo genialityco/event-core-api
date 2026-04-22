@@ -8,8 +8,20 @@ export class CreateSpeakerDto {
   readonly names: string;
 
   @IsString()
-  @IsNotEmpty()
-  readonly description: string;
+  @IsOptional()
+  readonly description?: string;
+
+  @IsString()
+  @IsOptional()
+  readonly descriptionEN?: string;
+
+  @IsString()
+  @IsOptional()
+  readonly role?: string;
+
+  @IsString()
+  @IsOptional()
+  readonly organization?: string;
 
   @IsString()
   @IsOptional()

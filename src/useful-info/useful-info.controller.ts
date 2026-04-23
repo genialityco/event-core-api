@@ -9,6 +9,8 @@ export class UsefulInfoController {
   @Get()
   async findAll(@Param('eventId') eventId: string) {
     const items = await this.usefulInfoService.findByEvent(eventId, true);
-    return new ResponseDto('success', 'Info encontrada', items);
+    // Sort by order ascending
+    const sorted = items.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
+    return new ResponseDto('success', 'Info encontrada', sorted);
   }
 }

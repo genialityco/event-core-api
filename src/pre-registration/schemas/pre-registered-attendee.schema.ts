@@ -14,6 +14,10 @@ export const PreRegisteredAttendeeSchema = new mongoose.Schema(
       default: null,
     },
     name: { type: String, trim: true, default: null },
+    channel: { type: String, trim: true, default: null },
+    position: { type: String, trim: true, default: null },
+    observations: { type: String, trim: true, default: null },
+    country: { type: String, trim: true, default: null },
     isActivated: { type: Boolean, default: false },
     activatedAt: { type: Date, default: null },
     activatedByUserId: { type: String, default: null },
@@ -33,6 +37,10 @@ export type PreRegisteredAttendeeDocument = mongoose.Document & {
   organizationId: mongoose.Types.ObjectId;
   eventId: mongoose.Types.ObjectId | null;
   name: string | null;
+  channel: string | null;
+  position: string | null;
+  observations: string | null;
+  country: string | null;
   isActivated: boolean;
   activatedAt: Date | null;
   activatedByUserId: string | null;

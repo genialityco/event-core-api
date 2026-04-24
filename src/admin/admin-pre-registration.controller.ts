@@ -7,7 +7,6 @@ import {
   Param,
   Body,
   Query,
-  ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -22,6 +21,31 @@ export class AdminPreRegistrationController {
     @InjectModel('Organization')
     private readonly orgModel: Model<any>,
   ) {}
+
+  private pickTrimmed(input: Record<string, any>, keys: string[]) {
+    for (const key of keys) {
+      const value = input?.[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+    return undefined;
+  }
+
+  private normalizeExtraFields(input: Record<string, any>) {
+    return {
+      name: this.pickTrimmed(input, ['name', 'nombre']),
+      channel: this.pickTrimmed(input, [
+        'channel',
+        'canal',
+        'organization',
+        'organizacion',
+      ]),
+      position: this.pickTrimmed(input, ['position', 'cargo']),
+      observations: this.pickTrimmed(input, ['observations', 'observaciones']),
+      country: this.pickTrimmed(input, ['country', 'pais']),
+    };
+  }
 
   /** GET — lista todos los correos pre-registrados de la org */
   @Get()
@@ -47,22 +71,50 @@ export class AdminPreRegistrationController {
   @Post()
   async addOne(
     @Param('orgId') orgId: string,
-    @Body() body: { email: string; name?: string; eventId?: string },
+    @Body() body: { email: string; name?: string; channel?: string; position?: string; observations?: string; country?: string; eventId?: string },
   ) {
     if (!body.email) throw new BadRequestException('El correo es requerido.');
 
     const email = body.email.toLowerCase().trim();
-    const doc: any = { email, organizationId: new Types.ObjectId(orgId) };
-    if (body.name) doc.name = body.name.trim();
-    if (body.eventId) doc.eventId = new Types.ObjectId(body.eventId);
+    const orgObjectId = new Types.ObjectId(orgId);
+    const normalized = this.normalizeExtraFields(body as any);
+    const setPayload: any = {};
+
+    if (normalized.name) setPayload.name = normalized.name;
+    if (normalized.channel) setPayload.channel = normalized.channel;
+    if (normalized.position) setPayload.position = normalized.position;
+    if (normalized.observations) setPayload.observations = normalized.observations;
+    if (normalized.country) setPayload.country = normalized.country;
+    if (body.eventId) setPayload.eventId = new Types.ObjectId(body.eventId);
 
     try {
-      const created = await this.preRegModel.create(doc);
-      return new ResponseDto('success', 'Correo pre-registrado', created);
+      const result = await this.preRegModel.findOneAndUpdate(
+        { email, organizationId: orgObjectId },
+        {
+          $set: setPayload,
+          $setOnInsert: {
+            email,
+            organizationId: orgObjectId,
+            isActivated: false,
+            activatedAt: null,
+            activatedByUserId: null,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+          rawResult: true,
+          setDefaultsOnInsert: true,
+        },
+      );
+
+      const wasCreated = !result?.lastErrorObject?.updatedExisting;
+      return new ResponseDto(
+        'success',
+        wasCreated ? 'Correo pre-registrado' : 'Correo pre-registrado actualizado',
+        result?.value,
+      );
     } catch (err: any) {
-      if (err.code === 11000) {
-        throw new ConflictException('Este correo ya está pre-registrado en la organización.');
-      }
       throw err;
     }
   }
@@ -72,7 +124,7 @@ export class AdminPreRegistrationController {
   async bulkImport(
     @Param('orgId') orgId: string,
     @Body()
-    body: { emails: Array<{ email: string; name?: string }>; eventId?: string },
+    body: { emails: Array<{ email: string; name?: string; channel?: string; position?: string; observations?: string; country?: string }>; eventId?: string },
   ) {
     if (!body.emails?.length) {
       throw new BadRequestException('Se requiere al menos un correo.');
@@ -81,30 +133,48 @@ export class AdminPreRegistrationController {
     const orgObjectId = new Types.ObjectId(orgId);
     const eventObjectId = body.eventId ? new Types.ObjectId(body.eventId) : null;
 
-    const ops = body.emails.map(({ email, name }) => ({
-      updateOne: {
-        filter: { email: email.toLowerCase().trim(), organizationId: orgObjectId },
-        update: {
-          $setOnInsert: {
-            email: email.toLowerCase().trim(),
-            organizationId: orgObjectId,
-            eventId: eventObjectId,
-            name: name?.trim() ?? null,
-            isActivated: false,
-            activatedAt: null,
-            activatedByUserId: null,
+    const ops = body.emails.map((raw) => {
+      const normalized = this.normalizeExtraFields(raw as any);
+      const email = String((raw as any)?.email ?? '').toLowerCase().trim();
+
+      const setPayload: any = {
+        name: normalized.name ?? null,
+        channel: normalized.channel ?? null,
+        position: normalized.position ?? null,
+        observations: normalized.observations ?? null,
+        country: normalized.country ?? null,
+      };
+
+      if (eventObjectId) {
+        setPayload.eventId = eventObjectId;
+      }
+
+      return {
+        updateOne: {
+          filter: { email: email.toLowerCase().trim(), organizationId: orgObjectId },
+          update: {
+            $set: setPayload,
+            $setOnInsert: {
+              email,
+              organizationId: orgObjectId,
+              isActivated: false,
+              activatedAt: null,
+              activatedByUserId: null,
+            },
           },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }));
+      };
+    });
 
     const result = await this.preRegModel.bulkWrite(ops);
     const inserted = result.upsertedCount ?? 0;
-    const skipped = body.emails.length - inserted;
+    const updated = result.modifiedCount ?? 0;
+    const skipped = body.emails.length - inserted - updated;
 
-    return new ResponseDto('success', `${inserted} correos importados, ${skipped} duplicados omitidos.`, {
+    return new ResponseDto('success', `${inserted} correos importados, ${updated} actualizados, ${skipped} sin cambios.`, {
       inserted,
+      updated,
       skipped,
     });
   }

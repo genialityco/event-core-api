@@ -13,6 +13,22 @@ export class CreateAgendaDto {
   @IsNotEmpty()
   readonly eventId: string;
 
+  @IsOptional()
+  @IsString()
+  readonly dressCode?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly dressCodeEn?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly room?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly roomEn?: string;
+
   @IsArray()
   @ArrayNotEmpty()
   readonly sessions: SessionDto[];
@@ -23,6 +39,10 @@ export class SessionDto {
   @IsNotEmpty()
   readonly title: string;
 
+  @IsOptional()
+  @IsString()
+  readonly titleEn?: string;
+
   @IsISO8601()
   @IsNotEmpty()
   readonly startDateTime: string;
@@ -46,7 +66,15 @@ export class SessionDto {
 
   @IsOptional()
   @IsString()
+  readonly roomEn?: string;
+
+  @IsOptional()
+  @IsString()
   readonly typeSession?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly typeSessionEn?: string;
 
   @IsOptional()
   @IsArray()
@@ -57,6 +85,10 @@ export class subSessionDto {
   @IsNotEmpty()
   readonly title: string;
 
+  @IsOptional()
+  @IsString()
+  readonly titleEn?: string;
+
   @IsISO8601()
   @IsNotEmpty()
   readonly startDateTime: string;
@@ -77,4 +109,8 @@ export class subSessionDto {
   @IsOptional()
   @IsString()
   readonly room?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly roomEn?: string;
 }

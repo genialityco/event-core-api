@@ -5,9 +5,10 @@ export interface Speaker extends Document {
   readonly description: string;
   readonly descriptionEN: string;
   readonly role?: string;
+  readonly roleEN?: string;
   readonly organization?: string;
   readonly location?: string;
-  readonly isInternational: boolean;
+  readonly country: string;
   readonly imageUrl: string;
   eventId: Types.ObjectId;
 }

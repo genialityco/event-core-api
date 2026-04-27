@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Types } from 'mongoose';
 
@@ -21,15 +21,20 @@ export class CreateSpeakerDto {
 
   @IsString()
   @IsOptional()
+  readonly roleEN?: string;
+
+  @IsString()
+  @IsOptional()
   readonly organization?: string;
 
   @IsString()
   @IsOptional()
   readonly location?: string;
 
-  @IsBoolean()
+  @IsString()
   @IsNotEmpty()
-  readonly isInternational: boolean;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  readonly country: string;
 
   @IsString()
   @IsNotEmpty()

@@ -22,6 +22,10 @@ import { SpeakerSchema } from 'src/speakers/schemas/speakers.schema';
 import { PhotoSchema } from 'src/photos/schemas/photo.schema';
 import { PreRegisteredAttendeeSchema } from 'src/pre-registration/schemas/pre-registered-attendee.schema';
 import { OrganizationSchema } from 'src/organization/schemas/organization.schema';
+import { SessionAttendanceSchema } from 'src/agenda/schemas/session-attendance.schema';
+import { MemberSchema } from 'src/member/schemas/member.schema';
+import { AdminAttendanceRequiredController } from './admin-attendance-required.controller';
+import { AdminAttendanceRequiredService } from './admin-attendance-required.service';
 
 @Module({
   imports: [
@@ -38,6 +42,8 @@ import { OrganizationSchema } from 'src/organization/schemas/organization.schema
       { name: 'UsefulInfo', schema: UsefulInfoSchema },
       { name: 'PreRegisteredAttendee', schema: PreRegisteredAttendeeSchema },
       { name: 'Organization', schema: OrganizationSchema },
+      { name: 'SessionAttendance', schema: SessionAttendanceSchema },
+      { name: 'Member', schema: MemberSchema },
     ]),
   ],
   controllers: [
@@ -51,6 +57,8 @@ import { OrganizationSchema } from 'src/organization/schemas/organization.schema
     AdminUsefulInfoController,
     AdminTravelersController,
     AdminPreRegistrationController,
+    AdminAttendanceRequiredController,
   ],
+  providers: [AdminAttendanceRequiredService],
 })
 export class AdminModule {}
